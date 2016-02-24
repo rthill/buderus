@@ -4,7 +4,7 @@ Plugin to control Buderus boilers using an additional Logamatic web KM200 module
 
 
 ## Notes
-This plugin is still under development, but for myself in daily use. I use this plugin to lower heating when no presence is detected for longer period or when the alarm system is activated.
+This plugin is still __under development__! I use this plugin to lower heating when no presence is detected for longer period or when the alarm system is activated.
 
 ## Prerequisite
 The following python packages need to be installed on your system:
@@ -28,6 +28,7 @@ class_name = Buderus
 class_path = plugins.buderus
 host = <ip_address>
 key = <key generated from https://ssl-account.com/km200.andreashahn.info/>
+cycle = 900
 </pre>
 
 ### items.conf
