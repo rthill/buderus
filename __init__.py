@@ -30,17 +30,20 @@ logger = logging.getLogger('')
 
 
 class Buderus:
+    BS = AES.block_size
     INTERRUPT = u'\u0001'
     PAD = u'\u0000'
 
     def __init__(self, smarthome, host, key, cycle=60):
         logger.info("Init Buderus")
+        self.__ua = "TeleHeater/2.2.3"
+        self.__content_type = "application/json"
         self._sh = smarthome
         self._host = host
         self._key = binascii.unhexlify(key)
         self._ids = {}
         self.opener = urllib.request.build_opener()
-        self.opener.addheaders = [('User-agent', 'TeleHeater/2.2.3'), ('Accept', 'application/json')]
+        self.opener.addheaders = [('User-agent', self.__ua), ('Accept', self.__content_type)]
         self._sh.scheduler.add('Buderus', self._cycle, cycle=int(cycle))
         self._sh.trigger('Buderus', self._cycle)
 
@@ -51,12 +54,12 @@ class Buderus:
         return data
 
     def _encrypt(self, plain):
-        # TODO: Add padding
+        plain = plain + (AES.block_size - len(plain) % self.BS) * self.PAD
         encobj = AES.new(self._key, AES.MODE_ECB)
         data = encobj.encrypt(plain)
         logger.debug(data)
         logger.debug(base64.b64encode(data))
-        return data
+        return base64.b64encode(data)
 
     def _get_data(self, path):
         try:
@@ -74,15 +77,20 @@ class Buderus:
     def _set_data(self, path, data):
         try:
             url = 'http://' + self._host + path
-            logger.info("Buderus setting value {} for {}".format(data, path))
-            req = self.opener.open(url, data=data, method='PUT')
-            logger.debug(req)
+            logger.info("Buderus setting value for {}".format(path))
+            headers = {}
+            headers['User-Agent'] = self.__ua
+            headers['Content-Type'] = self.__content_type
+            request = urllib.request.Request(url, data=data, headers=headers, method='PUT')
+            logger.debug(request.__dict__)
+            req = urllib.request.urlopen(request)
+            logger.info("Buderus returned {}: {}".format(req.status, req.reason))
+            logger.debug(req.read())
         except Exception as e:
             logger.error("Buderus error happened at {}: {}".format(url, e))
             return None
 
     def _get_json(self, data):
-
         try:
             j = json.load(StringIO(data.decode()))
             return j
@@ -91,13 +99,14 @@ class Buderus:
             return False
 
     def _json_encode(self, value):
-
-        d = {}
-        d['value'] = value
+        d = {"value": value}
         return json.dumps([d])
 
     def _get_value(self, j):
         return j['value']
+
+    def _get_type(self, j):
+        return j['type']
 
     def _get_writeable(self, j):
         if j['writeable'] == 1:
@@ -105,8 +114,18 @@ class Buderus:
         else:
             return False
 
-    def _get_allowed_values(self, j):
-        return j['allowedValues']
+    def _get_allowed_values(self, j, value_type):
+        if value_type == "stringValue":
+            return j['allowedValues']
+        elif value_type == "floatValue":
+            return {"minValue": j['minValue'],
+                    "maxValue": j['maxValue']}
+
+    def _submit_data(self, item, id):
+        logger.info("Buderus SETTING {} to {}".format(item, item()))
+        payload = self._json_encode(item())
+        logger.debug(payload)
+        req = self._set_data(id, self._encrypt(str(payload)))
 
     def run(self):
         self.alive = True
@@ -131,16 +150,21 @@ class Buderus:
 
     def update_item(self, item, caller=None, source=None, dest=None):
         if caller != "Buderus":
-            logger.debug(dir(item))
             id = item.conf['km_id']
             plain = self._get_data(id)
             data = self._get_json(plain)
             if self._get_writeable(data):
-                allowed_values = self._get_allowed_values(data)
-                if item() in allowed_values:
-                    logger.info("Buderus SETTING {} to {}".format(item, item()))
+                value_type = self._get_type(data)
+                allowed_values = self._get_allowed_values(data, value_type)
+                if value_type == "stringValue" and item() in allowed_values:
+                    self._submit_data(item, id)
+                    return
+                elif value_type == "floatValue" and item() >= allowed_values['minValue'] and item() <= allowed_values['maxValue']:
+                    self._submit_data(item, id)
+                    return
                 else:
                     logger.error("Buderus value {} not allowed [{}]".format(item(), allowed_values))
+                    item(item.prev_value(), "Buderus")
             else:
                 logger.error("Buderus item {} not writeable!".format(item))
-        return None
+                item(item.prev_value(), "Buderus")

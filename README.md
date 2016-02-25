@@ -22,18 +22,18 @@ git clone https://github.com/rthill/buderus.git
 </pre>
 
 ### plugin.conf
-<pre>
+```
 [buderus]
 class_name = Buderus
 class_path = plugins.buderus
 host = <ip_address>
 key = <key generated from https://ssl-account.com/km200.andreashahn.info/>
 cycle = 900
-</pre>
+```
 
 ### items.conf
 
-<pre>
+```
 [buderus]
     [[info]]
         [[[datetime]]]
@@ -115,4 +115,4 @@ cycle = 900
             type = num
             km_id = "/dhwCircuits/dhw1/workingTime"
             Influx = true          
-</pre>
+```
