@@ -85,7 +85,8 @@ class Buderus:
             logger.debug(request.__dict__)
             req = urllib.request.urlopen(request)
             logger.info("Buderus returned {}: {}".format(req.status, req.reason))
-            logger.debug(req.read())
+            if not req.status == 204:
+                logger.debug(req.read())
         except Exception as e:
             logger.error("Buderus error happened at {}: {}".format(url, e))
             return None

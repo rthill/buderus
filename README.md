@@ -116,3 +116,5 @@ cycle = 900
             km_id = "/dhwCircuits/dhw1/workingTime"
             Influx = true          
 ```
+
+See [URLs](URLs.md) for more valid km_id's. 
