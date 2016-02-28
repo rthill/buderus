@@ -32,7 +32,7 @@ class Buderus:
     INTERRUPT = u'\u0001'
     PAD = u'\u0000'
 
-    def __init__(self, smarthome, host, key, cycle=60):
+    def __init__(self, smarthome, host, key, cycle=900):
         logger.info("Init Buderus")
         self.__ua = "TeleHeater/2.2.3"
         self.__content_type = "application/json"
@@ -55,8 +55,7 @@ class Buderus:
         plain = plain + (AES.block_size - len(plain) % self.BS) * self.PAD
         encobj = AES.new(self._key, AES.MODE_ECB)
         data = encobj.encrypt(plain)
-        logger.debug(data)
-        logger.debug(base64.b64encode(data))
+        logger.debug("Buderus encrypted data: {} -- Base64 encoded: {}".format(data, base64.b64encode(data)))
         return base64.b64encode(data)
 
     def _get_data(self, path):
@@ -65,7 +64,6 @@ class Buderus:
             logger.info("Buderus fetching data from {}".format(path))
             resp = self.opener.open(url)
             plain = self._decrypt(resp.read())
-            logger.debug(plain)
             logger.debug("Buderus data received from {}: {}".format(url, plain))
             return plain
         except Exception as e:
@@ -76,11 +74,8 @@ class Buderus:
         try:
             url = 'http://' + self._host + path
             logger.info("Buderus setting value for {}".format(path))
-            headers = {}
-            headers['User-Agent'] = self.__ua
-            headers['Content-Type'] = self.__content_type
+            headers = {"User-Agent": self.__ua, "Content-Type": self.__content_type}
             request = urllib.request.Request(url, data=data, headers=headers, method='PUT')
-            logger.debug(request.__dict__)
             req = urllib.request.urlopen(request)
             logger.info("Buderus returned {}: {}".format(req.status, req.reason))
             if not req.status == 204:
@@ -117,8 +112,7 @@ class Buderus:
         if value_type == "stringValue":
             return j['allowedValues']
         elif value_type == "floatValue":
-            return {"minValue": j['minValue'],
-                    "maxValue": j['maxValue']}
+            return {"minValue": j['minValue'], "maxValue": j['maxValue']}
 
     def _submit_data(self, item, id):
         logger.info("Buderus SETTING {} to {}".format(item, item()))
@@ -133,13 +127,11 @@ class Buderus:
         self.alive = False
 
     def _cycle(self):
-        logger.info("Buderus cycle started")
         for id, item in self._ids.items():
             logger.info("Buderus initializing value {} for {}".format(id, item))
             plain = self._get_data(id)
             data = self._get_json(plain)
             item(self._get_value(data), "Buderus")
-        logger.info("Buderus cycle ended")
 
     def parse_item(self, item):
         if "km_id" in item.conf:
@@ -158,7 +150,8 @@ class Buderus:
                 if value_type == "stringValue" and item() in allowed_values:
                     self._submit_data(item, id)
                     return
-                elif value_type == "floatValue" and item() >= allowed_values['minValue'] and item() <= allowed_values['maxValue']:
+                elif value_type == "floatValue" and item() >= allowed_values['minValue'] and item() <= allowed_values[
+                    'maxValue']:
                     self._submit_data(item, id)
                     return
                 else:

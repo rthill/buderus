@@ -28,7 +28,7 @@ class_name = Buderus
 class_path = plugins.buderus
 host = <ip_address>
 key = <key generated from https://ssl-account.com/km200.andreashahn.info/>
-cycle = 900
+cycle = 900 # default every 15 minutes
 ```
 
 ### items.conf
@@ -69,7 +69,7 @@ cycle = 900
             type = str
             km_id = "/heatSources/flameStatus"
         [[[starts]]]
-            type = str
+            type = num
             km_id = "/heatSources/hs1/numberOfStarts"
     # Heating circuit 1
     [[hc1]]
