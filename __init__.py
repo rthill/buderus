@@ -128,7 +128,6 @@ class Buderus:
 
     def _cycle(self):
         for id, item in self._ids.items():
-            logger.info("Buderus initializing value {} for {}".format(id, item))
             plain = self._get_data(id)
             data = self._get_json(plain)
             item(self._get_value(data), "Buderus")
