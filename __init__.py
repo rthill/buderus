@@ -110,7 +110,10 @@ class Buderus:
 
     def _get_allowed_values(self, j, value_type):
         if value_type == "stringValue":
-            return j['allowedValues']
+            try:
+                return j['allowedValues']
+            except:
+                return None
         elif value_type == "floatValue":
             return {"minValue": j['minValue'], "maxValue": j['maxValue']}
 
@@ -146,7 +149,7 @@ class Buderus:
             if self._get_writeable(data):
                 value_type = self._get_type(data)
                 allowed_values = self._get_allowed_values(data, value_type)
-                if value_type == "stringValue" and item() in allowed_values:
+                if value_type == "stringValue" and item() in allowed_values or not allowed_values:
                     self._submit_data(item, id)
                     return
                 elif value_type == "floatValue" and item() >= allowed_values['minValue'] and item() <= allowed_values[
