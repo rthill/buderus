@@ -29,8 +29,8 @@ logger = logging.getLogger('')
 
 class Buderus:
     BS = AES.block_size
-    INTERRUPT = u'\u0001'
-    PAD = u'\u0000'
+    INTERRUPT = '\u0001'
+    PAD = '\u0000'
 
     def __init__(self, smarthome, host, key, cycle=900):
         logger.info("Init Buderus")
@@ -43,7 +43,6 @@ class Buderus:
         self.opener = urllib.request.build_opener()
         self.opener.addheaders = [('User-agent', self.__ua), ('Accept', self.__content_type)]
         self._sh.scheduler.add('Buderus', self._cycle, cycle=int(cycle))
-        self._sh.trigger('Buderus', self._cycle)
 
     def _decrypt(self, enc):
         decobj = AES.new(self._key, AES.MODE_ECB)
@@ -61,7 +60,7 @@ class Buderus:
     def _get_data(self, path):
         try:
             url = 'http://' + self._host + path
-            logger.info("Buderus fetching data from {}".format(path))
+            logger.debug("Buderus fetching data from {}".format(path))
             resp = self.opener.open(url)
             plain = self._decrypt(resp.read())
             logger.debug("Buderus data received from {}: {}".format(url, plain))
@@ -130,10 +129,12 @@ class Buderus:
         self.alive = False
 
     def _cycle(self):
+        logger.info("Buderus fetching data...")
         for id, item in self._ids.items():
             plain = self._get_data(id)
             data = self._get_json(plain)
             item(self._get_value(data), "Buderus")
+        logger.info("Buderus fetching data done.")
 
     def parse_item(self, item):
         if "km_id" in item.conf:
