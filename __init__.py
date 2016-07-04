@@ -23,11 +23,14 @@ import binascii
 import urllib.request, urllib.error, urllib.parse
 from io import StringIO
 from Crypto.Cipher import AES
+from lib.model.smartplugin import SmartPlugin
 
 logger = logging.getLogger('')
 
 
-class Buderus:
+class Buderus(SmartPlugin):
+    PLUGIN_VERSION = "1.0.0"
+    ALLOW_MULTIINSTANCE = False
     BS = AES.block_size
     INTERRUPT = '\u0001'
     PAD = '\u0000'
