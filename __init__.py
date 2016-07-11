@@ -1,19 +1,22 @@
 #!/usr/bin/env python3
+# vim: set encoding=utf-8 tabstop=4 softtabstop=4 shiftwidth=4 expandtab
 #########################################################################
 #  Copyright 2016 Raoul Thill                       raoul.thill@gmail.com
 #########################################################################
-#  This plugin is free software: you can redistribute it and/or modify
+#  This file is part of SmartHomeNG.
+#
+#  SmartHomeNG is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
 #  (at your option) any later version.
 #
-#  This plugin is distributed in the hope that it will be useful,
+#  SmartHomeNG is distributed in the hope that it will be useful,
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU General Public License for more details.
 #
 #  You should have received a copy of the GNU General Public License
-#  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#  along with SmartHomeNG. If not, see <http://www.gnu.org/licenses/>.
 #########################################################################
 
 import logging
@@ -36,7 +39,8 @@ class Buderus(SmartPlugin):
     PAD = '\u0000'
 
     def __init__(self, smarthome, host, key, cycle=900):
-        logger.info("Init Buderus")
+        self.logger = logging.getLogger(__name__)
+        self.logger.info("Init Buderus")
         self.__ua = "TeleHeater/2.2.3"
         self.__content_type = "application/json"
         self._sh = smarthome
@@ -57,33 +61,33 @@ class Buderus(SmartPlugin):
         plain = plain + (AES.block_size - len(plain) % self.BS) * self.PAD
         encobj = AES.new(self._key, AES.MODE_ECB)
         data = encobj.encrypt(plain)
-        logger.debug("Buderus encrypted data: {} -- Base64 encoded: {}".format(data, base64.b64encode(data)))
+        self.logger.debug("Buderus encrypted data: {} -- Base64 encoded: {}".format(data, base64.b64encode(data)))
         return base64.b64encode(data)
 
     def _get_data(self, path):
         try:
             url = 'http://' + self._host + path
-            logger.debug("Buderus fetching data from {}".format(path))
+            self.logger.debug("Buderus fetching data from {}".format(path))
             resp = self.opener.open(url)
             plain = self._decrypt(resp.read())
-            logger.debug("Buderus data received from {}: {}".format(url, plain))
+            self.logger.debug("Buderus data received from {}: {}".format(url, plain))
             return plain
         except Exception as e:
-            logger.error("Buderus error happened at {}: {}".format(url, e))
+            self.logger.error("Buderus error happened at {}: {}".format(url, e))
             return None
 
     def _set_data(self, path, data):
         try:
             url = 'http://' + self._host + path
-            logger.info("Buderus setting value for {}".format(path))
+            self.logger.info("Buderus setting value for {}".format(path))
             headers = {"User-Agent": self.__ua, "Content-Type": self.__content_type}
             request = urllib.request.Request(url, data=data, headers=headers, method='PUT')
             req = urllib.request.urlopen(request)
-            logger.info("Buderus returned {}: {}".format(req.status, req.reason))
+            self.logger.info("Buderus returned {}: {}".format(req.status, req.reason))
             if not req.status == 204:
-                logger.debug(req.read())
+                self.logger.debug(req.read())
         except Exception as e:
-            logger.error("Buderus error happened at {}: {}".format(url, e))
+            self.logger.error("Buderus error happened at {}: {}".format(url, e))
             return None
 
     def _get_json(self, data):
@@ -91,7 +95,7 @@ class Buderus(SmartPlugin):
             j = json.load(StringIO(data.decode()))
             return j
         except Exception as e:
-            logger.error("Buderus error happened while reading JSON data {}: {}".format(data, e))
+            self.logger.error("Buderus error happened while reading JSON data {}: {}".format(data, e))
             return False
 
     def _json_encode(self, value):
@@ -120,9 +124,9 @@ class Buderus(SmartPlugin):
             return {"minValue": j['minValue'], "maxValue": j['maxValue']}
 
     def _submit_data(self, item, id):
-        logger.info("Buderus SETTING {} to {}".format(item, item()))
+        self.logger.info("Buderus SETTING {} to {}".format(item, item()))
         payload = self._json_encode(item())
-        logger.debug(payload)
+        self.logger.debug(payload)
         req = self._set_data(id, self._encrypt(str(payload)))
 
     def run(self):
@@ -132,12 +136,12 @@ class Buderus(SmartPlugin):
         self.alive = False
 
     def _cycle(self):
-        logger.info("Buderus fetching data...")
+        self.logger.info("Buderus fetching data...")
         for id, item in self._ids.items():
             plain = self._get_data(id)
             data = self._get_json(plain)
             item(self._get_value(data), "Buderus")
-        logger.info("Buderus fetching data done.")
+        self.logger.info("Buderus fetching data done.")
 
     def parse_item(self, item):
         if "km_id" in item.conf:
@@ -161,8 +165,8 @@ class Buderus(SmartPlugin):
                     self._submit_data(item, id)
                     return
                 else:
-                    logger.error("Buderus value {} not allowed [{}]".format(item(), allowed_values))
+                    self.logger.error("Buderus value {} not allowed [{}]".format(item(), allowed_values))
                     item(item.prev_value(), "Buderus")
             else:
-                logger.error("Buderus item {} not writeable!".format(item))
+                self.logger.error("Buderus item {} not writeable!".format(item))
                 item(item.prev_value(), "Buderus")
