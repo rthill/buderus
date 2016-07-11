@@ -1,3 +1,6 @@
+# Important
+__This plugin has been merged into [smarthomeNG](https://github.com/smarthomeNG/smarthome). No modifications are done in this repository anymore.__
+ 
 # smarthome-buderus
 
 Plugin to control Buderus boilers using an additional Logamatic web KM200 module. Logamatic web KM50 and KM300 modules should also be supported.
