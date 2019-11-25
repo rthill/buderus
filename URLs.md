@@ -1,6 +1,6 @@
 # REST URLs KM200
 
-The following is a list with km_id's for the KM200 module. Only heating circuit1, hot water is used on this system. No solar circuit is setup, so I didn't lookup valid urls.
+The following is a list with km_id's for the KM200 module. Heating circuit1, solar circuit1 and hot water are used on this system.
 
 ## REST Path /system
 
@@ -96,7 +96,9 @@ The following is a list with km_id's for the KM200 module. Only heating circuit1
 /gateway/instAccess
 /gateway/instWriteAccess
 /gateway/version
-/gateway/update
+/gateway/update/version
+/gateway/update/request
+/gateway/update/strategy
 ```
 
 ## REST Path /heatSources
@@ -203,6 +205,17 @@ The following is a list with km_id's for the KM200 module. Only heating circuit1
 /dhwCircuits/dhw1/temperatureLevels/high
 ```
 
+## REST Path /solarCircuits
+
+```
+/solarCircuits/sc1/dhwTankTemperature
+/solarCircuits/sc1/solarYield
+/solarCircuits/sc1/pumpModulation
+/solarCircuits/sc1/collectorTemperature
+/solarCircuits/sc1/actuatorStatus
+/solarCircuits/sc1/status
+```
+
 ## REST Path /recordings
 
 ```
@@ -222,4 +235,5 @@ The following is a list with km_id's for the KM200 module. Only heating circuit1
 /recordings/heatingCircuits/hc1/roomtemperature
 /recordings/system/sensors/temperatures/outdoor_t1
 /recordings/system/heatSources/hs1/actualPower
+/recordings/solarCircuits/sc1/solarYield
 ```
